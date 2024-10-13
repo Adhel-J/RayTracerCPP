@@ -224,6 +224,7 @@ bool inRange(double min, double max, double value);
 double length(Vector3D vec);
 void addValues();
 int max(double val);
+pair<int, double> closestIntersection(Vector3D O, Vector3D D, double t_min, double t_max);
 
 Vector3D vectorAdd(Vector3D a, Vector3D b);
 Vector3D vectorSub(Vector3D a, Vector3D b);
@@ -316,9 +317,26 @@ Vector3D canvasToViewport(double x, double y) {
 }
 
 Vector3D traceRay(Vector3D O, Vector3D D, double t_min, double t_max) {
+
+    pair<int, double> values = closestIntersection(O, D, t_min, t_max);
+
+    int closest_sphere_index = values.first;
+    double closest_t = values.second;
+
+    if (closest_sphere_index == -1) {
+        return bColor;
+    }
+    Vector3D P = O + closest_t * D;
+    Vector3D N = P - spheres[closest_sphere_index].getCenter();
+    N = N/length(N);
+
+    return spheres[closest_sphere_index].getColor() * computeLighting(P, N, -1*D, spheres[closest_sphere_index].getSpec());
+}
+
+pair<int, double> closestIntersection(Vector3D O, Vector3D D, double t_min, double t_max) {
+
     double closest_t = inf;
     int closest_sphere_index = -1;
-    // cout << spheres.size();
     for (int i = 0; i < spheres.size(); i++) {
         pair<double, double> values = InterceptRaySphere(O,D,spheres[i]);
         double t1 = values.first;
@@ -334,21 +352,8 @@ Vector3D traceRay(Vector3D O, Vector3D D, double t_min, double t_max) {
             closest_sphere_index = i;
         }
     }
-    if (closest_sphere_index == -1) {
-        return bColor;
-    }
-    //Vector3D P = vectorAdd(scalarMultiply(D, closest_t), O);
-    Vector3D P = O + closest_t * D;
-    Vector3D N = P - spheres[closest_sphere_index].getCenter();
-    //Vector3D N = vectorSub(P, spheres[closest_sphere_index].getCenter());
-    //N = scalarMultiply(N, length(N));
-    N = N/length(N);
 
-    return spheres[closest_sphere_index].getColor() * computeLighting(P, N, -1*D, spheres[closest_sphere_index].getSpec());
-
-    //return scalarMultiply(spheres[closest_sphere_index].getColor(),
-                          computeLighting(P, N, -1.0 * D, spheres[closest_sphere_index].getSpec());
-
+    return pair(closest_sphere_index, closest_t);
 }
 
 pair<double, double> InterceptRaySphere(Vector3D O, Vector3D D, Sphere sphere) {
